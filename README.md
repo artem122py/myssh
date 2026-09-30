@@ -1,6 +1,7 @@
 # myssh — SSH/SFTP на чистом Python + своя криптография на C
 
-Полностью самостоятельная реализация SSH-2.0 + SFTP v3 + post-quantum KEX (mlkem768x25519-sha256). Совместима с OpenSSH 10.x в обе стороны.
+Полностью самостоятельная реализация SSH-2.0 + SFTP v3 + post-quantum KEX
+(mlkem768x25519-sha256). Совместима с OpenSSH 10.x в обе стороны.
 
 Без paramiko, cryptography, pynacl, liboqs. Только Python stdlib + свой C-код.
 
@@ -15,100 +16,91 @@
 - Ciphers: chacha20-poly1305@openssh.com, aes256-gcm@openssh.com
 - Userauth: publickey (Ed25519, RSA), password
 - Channels: session, exec, shell, pty-req, subsystem
-- known_hosts: plain + hashed + TOFU, MITM-детект
+- known_hosts: plain + hashed + TOFU + MITM-детект
 - Интерактивный shell: PTY + pipe-fallback
 
 ### Криптография (всё своё, на C)
 
-| Примитив | Файл | Назначение |
-|---|---|---|
-| SHA-256/512 | mysshprimitives.c | fingerprints, exchange hash, KDF |
-| SHA3-256/512 | sha3.c | ML-KEM (FIPS 202) |
-| SHAKE128/256 | sha3.c | ML-KEM sampling |
-| X25519 | mysshprimitives.c | KEX curve25519-sha256 |
-| Ed25519 | mysshprimitives.c | host key, userauth |
-| RSA (PKCS#1 v1.5) | rsa.c | host key, userauth |
-| AES-256-GCM | mysshprimitives.c | cipher |
-| AES-256-CTR | mysshprimitives.c | encrypted private keys |
-| ChaCha20-Poly1305 | chacha20poly1305.c | cipher |
-| Blowfish | mysshprimitives.c | bcrypt_pbkdf |
-| bcrypt_pbkdf | mysshprimitives.c | encrypted private keys |
-| ML-KEM-768 | mlkem.c | PQ KEX (FIPS 203) |
-
-### ML-KEM-768 (FIPS 203)
-
-- NLT над Z_3329[X]/(X^256+1) — Montgomery domain
-- SampleNTT (rejection sampling hз SHAKE128)
-- SamplePolyCBD (eta = 2)
-- Compress / Decompress (d = 1, 4, 10)
-- ByteEncode / ByteDecode (d = 1, 4, 10, 12)
-- K-PKE (KeyGen, Encrypt, Decrypt)
-- ML-KEM (KeyGen, Encaps, Decaps — FO-трансформ с implicit rejection)
+- SHA-256/512 — fingerprints, exchange hash, KDF
+- SHA3-256/512 — ML-KEM (FIPS 202)
+- SHAKE128/256 — ML-KEM sampling
+- X25519 — KEX curve25519-sha256
+- Ed25519 — host key, userauth
+- RSA (PKCS#1 v1.5) — host key, userauth
+- AES-256-GCM — cipher
+- AES-256-CTR — encrypted private keys
+- ChaCha20-Poly1305 — cipher
+- Blowfish — bcrypt_pbkdf
+- bcrypt_pbkdf — encrypted private keys
+- ML-KEM-768 — PQ KEX (FIPS 203)
 
 ---
 
 ## Установка
 
 Termux (Android):
+
     pkg install python clang
-    git clone https://github.com/your-username/myssh.git
+    git clone https://github.com/artem122py/myssh.git
     cd myssh
     sh install.sh
 
 Другие Unix:
-    git clone https://github.com/your-username/myssh.git
+
+    git clone https://github.com/artem122py/myssh.git
     cd myssh
     sh install.sh
-
-install.sh делает:
-1. Находит Python и C-компилятор.
-2. Генерирует blowfish_tables.h (из pi).
-3. Собирает libmyssh.so.
-4. Устанавливает .so в site-packages.
-5. Прогоняет самотесты.
-6. Создаёт якорный бэкап.
 
 ---
 
 ## Использование
 
-### Демо
+Демо:
 
-    python 3 myssh.py
+    python3 myssh.py
 
-Functional tests:
-    python3 test_myssh.py
-    python3 stress_audit.py
-
-### SFTP CLI
+SFTP CLI:
 
     python3 mysftp.py user@host -p 22 -i ~/.ssh/id_ed25519
 
-Vnutri: ls, cd, pwd, get, put, mkdir, rmdir, rm, rename, exit
+Внутри: ls, cd, pwd, get, put, mkdir, rmdir, rm, rename, exit
 
 ---
 
-## Архитектура
+## Тесты
 
-Python (myssh.py, ~3800 строк):
-- SSH-протокол (KEXINIT, KEX, USERAUTH)
-- SFTP v3 (сервер + клиент)
-- ML-KEM обертки (ctypes)
+    python3 test_myssh.py
+    python3 stress_audit.py
 
-C (native, ~2500 строк):
-- Вся криптопримитивы
-- ML-KEM-768 (FIPS 203)
+---
+
+## Интероп с OpenSSH
+
+Проверено с OpenSSH 10.5:
+- Наш клиент в OpenSSH sshd (KEX, host key, userauth, exec, shell, SFTP)
+- OpenSSH ssh в наш сервер
+- Наш клиент в OpenSSH sshd с PQ-KEX mlkem768x25519-sha256
 
 ---
 
 ## Безопасность
 
-��роект — обучающий. Не проходил независимого аудита.
-Можно использовать в доверенной сети.
-NE для публичного production.
+Проект — обучающий. Не проходил независимый аудит.
+Не стоит использовать для production SSH-сервера.
 
 ---
 
 ## Лицензия
 
 MIT. См. LICENSE.
+
+---
+
+## Ссылки
+
+- RFC 4251-4254 — SSH
+- draft-ietf-secsh-filexfer-02 — SFTP v3
+- FIPS 203 — ML-KEM
+- FIPS 202 — SHA-3/SHAKE
+- RFC 8032 — Ed25519
+- RFC 7748 — X25519
