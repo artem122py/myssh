@@ -16,7 +16,7 @@
 - Ciphers: chacha20-poly1305@openssh.com, aes256-gcm@openssh.com
 - Userauth: publickey (Ed25519, RSA), password
 - Channels: session, exec, shell, pty-req, subsystem
-- known_hosts: plain + hashed + TOFU + MITM-детект
+- known_hosts: plain + hashed + TOFU, MITM-детект
 - Интерактивный shell: PTY + pipe-fallback
 
 ### Криптография (всё своё, на C)
@@ -86,7 +86,8 @@ SFTP CLI:
 ## Безопасность
 
 Проект — обучающий. Не проходил независимый аудит.
-Не стоит использовать для production SSH-сервера.
+Можно использовать в доверенной сети.
+Не для публичного production.
 
 ---
 
