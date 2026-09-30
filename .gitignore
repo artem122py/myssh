@@ -1,0 +1,38 @@
+# Сборка
+*.o
+*.so
+/build/
+/native/libmyssh.so
+/native/*.o
+/native/.build.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Бэкапы
+/backups/
+*.bak
+*.bak_*
+*.orig
+*.rej
+
+# Ключи
+.ssh/
+*.pem
+id_rsa*
+id_ed25519*
+myssh_host_key*
+
+# Редакторы
+.vscode/
+.idea/
+*.swp
+*~
+
+# ОС
+.DS_Store
+Thumbs.db
+.demo_known_hosts
